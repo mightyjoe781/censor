@@ -4,18 +4,18 @@ local MP = minetest.get_modpath(minetest.get_current_modname())
 local censor = {
 
     -- some settings for default behaviour of mod
-    kick_enable = minetest.settings:get_bool('censor.kick_enable',true) or true,
-    warn_enable = minetest.settings:get_bool('censor.warn_enable',true) or true,
-    caps_enable = minetest.settings:get_bool('censor.caps_enable',true) or true,
-    name_enable = minetest.settings:get_bool('censor.name_enable',true) or true,
+    kick_enable = minetest.settings:get_bool('censor.kick_enable',true),
+    warn_enable = minetest.settings:get_bool('censor.warn_enable',true),
+    caps_enable = minetest.settings:get_bool('censor.caps_enable',true),
+    name_enable = minetest.settings:get_bool('censor.name_enable',true),
     warn_cost = minetest.settings:get('censor.warn_cost') or 3,
     caps_cost = minetest.settings:get('censor.caps_cost') or 2,
     violation_limit = minetest.settings:get('censor.violation_limit') or 12,
     caps_limit = minetest.settings:get('censor.violation_limit') or 50,
     -- substr_match is quite strict, either drop its support or allow some way of blacklisting
-    substr_match = minetest.settings:get_bool('censor.substr_match',false) or false,
+    substr_match = minetest.settings:get_bool('censor.substr_match',false),
     -- fun mode refers to substituting a bad word with a fun word
-    fun_mode = minetest.settings:get_bool('censor.fun_mode',true) or true,
+    fun_mode = minetest.settings:get_bool('censor.fun_mode',false),
     -- stores violation of online players
     violations = {}, fun_words={}, bad_words = {}, bad_en_words = {},whitelist = {},
     lang = {"en","zh","fil","fr","de","hi","ja","pl","ru","es","th"},
@@ -132,6 +132,15 @@ function censor.kick(name)
     end
 end
 
+function censor.mentioned(name,msg)
+    name, msg = name:lower(), msg:lower()
+
+    -- Direct Mention
+    local mention = msg:find(name,1,true)
+
+    return mention
+end
+
 -- fixing message
 function censor.fix_message(name,message)
     -- Censor Code
@@ -213,6 +222,13 @@ minetest.register_on_chat_message(function(name, message)
 
         -- add feature of mention highlight
         -- #######
+	if censor.mentioned(rname,message) then
+	    color = "#00ff00"
+	end
+	if name == rname then
+	    color = "#ffffff"
+	end
+
         local send = name .. ": ".. minetest.colorize(color,message)
         minetest.chat_send_player(rname,send)
     end
