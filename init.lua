@@ -148,7 +148,7 @@ function censor.fix_message(name,message)
     local mes = ""
     for w in message:gmatch("%S+") do
         for _,v in pairs(censor.bad_words) do
-            if v:len() >= 4 then
+            if v:len() >= 5 then
                 -- do contains operation
             if string.find(string.lower(w), string.lower(v)) then
                 local pat = string.rep("*",v:len())
