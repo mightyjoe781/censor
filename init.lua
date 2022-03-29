@@ -8,12 +8,13 @@ local censor = {
     warn_enable = minetest.settings:get_bool('censor.warn_enable',true),
     caps_enable = minetest.settings:get_bool('censor.caps_enable',true),
     name_enable = minetest.settings:get_bool('censor.name_enable',true),
+    links_enable = minetest.settings:get_bool('censor.links_enable',true),
     warn_cost = minetest.settings:get('censor.warn_cost') or 3,
     caps_cost = minetest.settings:get('censor.caps_cost') or 2,
     violation_limit = minetest.settings:get('censor.violation_limit') or 12,
     caps_limit = minetest.settings:get('censor.violation_limit') or 50,
     -- substr_match is quite strict, either drop its support or allow some way of blacklisting
-    substr_match = minetest.settings:get_bool('censor.substr_match',false),
+    substr_match = minetest.settings:get_bool('censor.substr_match',true),
     -- fun mode refers to substituting a bad word with a fun word
     fun_mode = minetest.settings:get_bool('censor.fun_mode',false),
     -- stores violation of online players
@@ -55,10 +56,26 @@ if file_exists(fun_file) then
     end
 end
 
+-- populate whitelist list
+local whitelist_file = dirname .. "/white"
+if file_exists(whitelist_file) then
+    for line in io.lines(whitelist_file) do
+        table.insert(censor.whitelist, line)
+    end
+end
+
+-- function to check if word is whitelisted or not
+function censor.contains(list,x)
+    for _,v in pairs(list) do
+	if v == x then return true end
+    end
+    return false
+end
+
 -- onprejoin changes by mod
 minetest.register_on_prejoinplayer(function(name)
     for _,v in pairs(censor.bad_words) do
-        if not censor.whitelist[name] and string.find(string.lower(name),string.lower(v)) then
+        if not censor.contains(censor.whitelist,name) and string.find(string.lower(name),string.lower(v)) then
             -- print on console
             print("[censor]: Blocked user " ..name.. " from joining because their name contains word : " .. v)
             return "Your name contained a blocked word :"..v..", Please try again with better name."
@@ -116,6 +133,13 @@ function censor.caps(name,msg)
     end
 end
 
+function censor.links(name,msg)
+    -- check setting
+    if not censor.links_enable then return end
+
+    -- detect links in the chat-message
+end
+
 -- kick on violation limit exceded
 function censor.kick(name)
     -- check if enabled kick
@@ -148,9 +172,9 @@ function censor.fix_message(name,message)
     local mes = ""
     for w in message:gmatch("%S+") do
         for _,v in pairs(censor.bad_words) do
-            if v:len() >= 5 then
+            if v:len() >= 5 and censor.substr_match then
                 -- do contains operation
-            if string.find(string.lower(w), string.lower(v)) then
+            if string.find(string.lower(w), string.lower(v)) and not censor.contains(censor.whitelist,w) then
                 local pat = string.rep("*",v:len())
                 if censor.fun_mode then
                     pat = censor.fun_words[math.random(1,#censor.fun_words)]
@@ -159,7 +183,7 @@ function censor.fix_message(name,message)
             end
             else
                 -- do match operation
-            if string.lower(w) == string.lower(v) then
+            if string.lower(w) == string.lower(v) and not censor.contains(censor.whitelist,w) then
                 local pat = string.rep("*",v:len())
                 if censor.fun_mode then
                     pat = censor.fun_words[math.random(1,#censor.fun_words)]
@@ -205,6 +229,7 @@ minetest.register_on_chat_message(function(name, message)
     end
 
     censor.caps(name,message)
+    censor.links(name,message)
     -- main censoring function
     -- #########
     message = censor.fix_message(name,message)
