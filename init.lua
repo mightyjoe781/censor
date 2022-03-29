@@ -171,6 +171,9 @@ end
 -- fixing message
 function censor.fix_message(name,message)
     -- Censor Code
+    -- fix a bug when sentence has more than one space between two words
+    message = string.gsub(message,"%s+", " ")
+    message = string.gsub(message, '^%s*(.-)%s*$','%1')
     -- "Lua is sexy" -> "Lua is ****"
     local mes = ""
     for w in message:gmatch("%S+") do
