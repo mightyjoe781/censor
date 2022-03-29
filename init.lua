@@ -135,9 +135,12 @@ end
 
 function censor.links(name,msg)
     -- check setting
-    if not censor.links_enable then return end
-
-    -- detect links in the chat-message
+    if not censor.links_enable then return msg end
+    local pattern = 'https?://(([%w_.~!*:@&+$/?%%#-]-)(%w[-.%w]*%.)(%w+)(:?)(%d*)(/?)([%w_.~!*:@&+$/?%%#=-]*))'
+    if not string.find(msg,pattern) then return msg end
+    minetest.chat_send_player(name,minetest.colorize(colors["info"],"Links are not allowed in chat!"))
+    return string.gsub(msg,pattern,"")
+    -- detect links in the chat-message and remove them
 end
 
 -- kick on violation limit exceded
@@ -229,7 +232,8 @@ minetest.register_on_chat_message(function(name, message)
     end
 
     censor.caps(name,message)
-    censor.links(name,message)
+    -- Remove all links from the message
+    message = censor.links(name,message)
     -- main censoring function
     -- #########
     message = censor.fix_message(name,message)

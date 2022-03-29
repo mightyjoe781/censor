@@ -10,9 +10,9 @@ Note: It overrides default chat functionality so be careful when using with simi
 * Detects Caps and sends alert the players.
 * Hightlight the message if a players name is mentioned.
 * Detects long messages and alerts players.
+* Detect links.
 
 ### To Do
 
 * Reset violation amount for players who play for longer hours.
-* Detect links.
 * Add custom commands to update/add words in whitelist and fun_list in runtime.
