@@ -14,7 +14,7 @@ local censor = {
     violation_limit = minetest.settings:get('censor.violation_limit') or 12,
     caps_limit = minetest.settings:get('censor.violation_limit') or 50,
     -- substr_match is quite strict, either drop its support or allow some way of blacklisting
-    substr_match = minetest.settings:get_bool('censor.substr_match',true),
+    substr_match = minetest.settings:get_bool('censor.substr_match',false),
     -- fun mode refers to substituting a bad word with a fun word
     fun_mode = minetest.settings:get_bool('censor.fun_mode',false),
     -- stores violation of online players
