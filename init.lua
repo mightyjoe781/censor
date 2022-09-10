@@ -76,8 +76,8 @@ end
 minetest.register_on_prejoinplayer(function(name)
     for _,v in pairs(censor.bad_words) do
         if not censor.contains(censor.whitelist,name) and string.find(string.lower(name),string.lower(v)) then
-            -- print on console
-            print("[censor]: Blocked user " ..name.. " from joining because their name contains word : " .. v)
+            minetest.log("action",
+                "[censor]: Blocked user " ..name.. " from joining because their name contains word : " .. v)
             return "Your name contained a blocked word :"..v..", Please try again with better name."
         end
     end
@@ -154,7 +154,7 @@ function censor.kick(name)
     if censor.violations[name] >= censor.violation_limit then
         minetest.kick_player(name, "Violations Limits Excedded")
         minetest.chat_send_all(name .. minetest.colorize(colors["warn"]," has been kicked due to violations limits."))
-        print("[censor]: " .. name .. " was kicked due to violations limits.")
+        minetest.log("action", "[censor]: " .. name .. " was kicked due to violations limits.")
         return true
     end
 end
@@ -219,7 +219,7 @@ function censor.fix_message(name,message)
 
     -- warn the offender
     if string.lower(mes) ~= string.lower(message) then
-        print("[censor]: ".. name .. " sent censored message :"..message)
+        minetest.log("action", "[censor]: ".. name .. " sent censored message :"..message)
         censor.violations[name] = (censor.violations[name] or 0) + censor.warn_cost
         censor.warn(name)
     end
