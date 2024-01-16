@@ -1,9 +1,10 @@
 -- load modpath
 local MP = minetest.get_modpath(minetest.get_current_modname())
 
-local censor = {
+censor = {
 
     -- some settings for default behaviour of mod
+    chat_mod_enable = minetest.settings:get_bool('censor.chat_mod_enable',false),
     kick_enable = minetest.settings:get_bool('censor.kick_enable',true),
     warn_enable = minetest.settings:get_bool('censor.warn_enable',true),
     caps_enable = minetest.settings:get_bool('censor.caps_enable',true),
@@ -226,14 +227,7 @@ function censor.fix_message(name,message)
     return mes
 end
 
--- main msg checking function
-minetest.register_on_chat_message(function(name, message)
-
-    -- Before sending message check shout privs
-    if not minetest.check_player_privs(name, "shout") then
-        return
-    end
-
+function censor.corrected_message(name, message)
     censor.caps(name,message)
     -- Remove all links from the message
     message = censor.links(name,message)
@@ -241,33 +235,46 @@ minetest.register_on_chat_message(function(name, message)
     -- #########
     message = censor.fix_message(name,message)
 
-    -- if player kicked then no need to broadcast their message
-    if censor.kick(name) then
+    return message
+end
+
+if censor.chat_mod_enable then
+    -- main msg checking function
+    minetest.register_on_chat_message(function(name, message)
+
+        -- Before sending message check shout privs
+        if not minetest.check_player_privs(name, "shout") then
+            return
+        end
+        message = censor.corrected_message(name,message)
+
+        -- if player kicked then no need to broadcast their message
+        if censor.kick(name) then
+            return true
+        end
+
+        -- send the manipulated message to everyone
+        for _,player in pairs(minetest.get_connected_players()) do
+            -- reciever is everyone
+            local rname = player:get_player_name()
+            local color = "#ffffff"
+
+            -- add feature of mention highlight
+            -- #######
+            if censor.mentioned(rname,message) then
+                color = "#00ff00"
+            end
+            if name == rname then
+                color = "#ffffff"
+            end
+            local send = name .. ": ".. minetest.colorize(color,message)
+            minetest.chat_send_player(rname,send)
+        end
+
+        -- return true to override default chat functionality
         return true
-    end
-
-    -- send the manipulated message to everyone
-    for _,player in pairs(minetest.get_connected_players()) do
-        -- reciever is everyone
-        local rname = player:get_player_name()
-        local color = "#ffffff"
-
-        -- add feature of mention highlight
-        -- #######
-	if censor.mentioned(rname,message) then
-	    color = "#00ff00"
-	end
-	if name == rname then
-	    color = "#ffffff"
-	end
-
-        local send = name .. ": ".. minetest.colorize(color,message)
-        minetest.chat_send_player(rname,send)
-    end
-
-    -- return true to override default chat functionality
-    return true
-end)
+    end)
+end
 
 -- console print mod status
 print("[censor] OK")
